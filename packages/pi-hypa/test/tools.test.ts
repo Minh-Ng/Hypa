@@ -24,7 +24,8 @@ test("shellQuote uses cmd-style double quotes on Windows", () => {
 
 test("buildReadCommand uses cat by default and sed for line slices", () => {
   assert.equal(buildReadCommand("src/File.cs"), "cat -- src/File.cs");
-  assert.equal(buildReadCommand("src/File.cs", 10, 5), "sed -n 10,14p -- src/File.cs");
+  assert.equal(buildReadCommand("src/File.cs", 10, 5), "sed -n 10,14p < src/File.cs");
+  assert.equal(buildReadCommand("-dash file", 1, 2), "sed -n 1,2p < '-dash file'");
 });
 
 test("buildGrepCommand includes safe ripgrep options", () => {

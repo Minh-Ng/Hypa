@@ -181,7 +181,10 @@ export function buildReadCommand(path: string, offset?: number, limit?: number):
   if (offset !== undefined || limit !== undefined) {
     const start = Math.max(1, Math.floor(offset ?? 1));
     const end = limit !== undefined ? start + Math.max(1, Math.floor(limit)) - 1 : "$";
-    return `sed -n ${shellQuote(`${start},${end}p`)} -- ${quotedPath}`;
+    // Feed the file through stdin: BSD sed does not accept GNU's `--`
+    // separator, while redirection also keeps dash-leading paths out of sed's
+    // option parser.
+    return `sed -n ${shellQuote(`${start},${end}p`)} < ${quotedPath}`;
   }
   return `cat -- ${quotedPath}`;
 }
