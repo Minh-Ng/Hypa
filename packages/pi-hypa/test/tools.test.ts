@@ -31,6 +31,10 @@ test("buildReadCommand uses cat by default and sed for line slices", () => {
     'sed -n 1,2p "%USERPROFILE%\\notes.txt"',
   );
   assert.equal(
+    buildReadCommand("%USERPROFILE%\\notes.txt", 10, undefined, "win32"),
+    'sed -n 10,2147483647p "%USERPROFILE%\\notes.txt"',
+  );
+  assert.equal(
     buildReadCommand("-dash file", 1, 2, "win32"),
     'sed -n 1,2p ".\\-dash file"',
   );

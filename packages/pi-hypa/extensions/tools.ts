@@ -189,7 +189,11 @@ export function buildReadCommand(
   const quotedPath = shellQuote(normalizedPath, platformName);
   if (offset !== undefined || limit !== undefined) {
     const start = Math.max(1, Math.floor(offset ?? 1));
-    const end = limit !== undefined ? start + Math.max(1, Math.floor(limit)) - 1 : "$";
+    const end = limit !== undefined
+      ? start + Math.max(1, Math.floor(limit)) - 1
+      : platformName === "win32"
+        ? 2_147_483_647
+        : "$";
     const range = shellQuote(`${start},${end}p`, platformName);
     if (platformName === "win32") {
       // Keep the command free of shell metacharacters so Hypa can execute sed
