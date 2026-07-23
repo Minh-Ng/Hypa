@@ -43,43 +43,45 @@ export default function (pi: ExtensionAPI) {
     });
   }
 
-  pi.on("tool_call", async (event, ctx) => {
-    if (!isToolCallEventType("bash", event)) return;
+  if (config.rewriteBash) {
+    pi.on("tool_call", async (event, ctx) => {
+      if (!isToolCallEventType("bash", event)) return;
 
-    const original = event.input.command;
-    const status = await rewriteCommand(pi, effectiveConfig, original, ctx.signal);
-    record(status);
+      const original = event.input.command;
+      const status = await rewriteCommand(pi, effectiveConfig, original, ctx.signal);
+      record(status);
 
-    switch (status.kind) {
-      case "rewritten":
-        event.input.command = status.command;
-        return;
-      case "passthrough":
-      case "skipped":
-      case "error":
-        return;
-      case "deny":
-        return { block: true, reason: status.reason };
-      case "ask": {
-        if (ctx.hasUI) {
-          const ok = await ctx.ui.confirm("Hypa confirmation", status.reason);
-          if (!ok) return { block: true, reason: "Blocked by user after Hypa confirmation request." };
+      switch (status.kind) {
+        case "rewritten":
           event.input.command = status.command;
           return;
-        }
-
-        if (config.askNonInteractive === "allow") {
-          event.input.command = status.command;
+        case "passthrough":
+        case "skipped":
+        case "error":
           return;
-        }
+        case "deny":
+          return { block: true, reason: status.reason };
+        case "ask": {
+          if (ctx.hasUI) {
+            const ok = await ctx.ui.confirm("Hypa confirmation", status.reason);
+            if (!ok) return { block: true, reason: "Blocked by user after Hypa confirmation request." };
+            event.input.command = status.command;
+            return;
+          }
 
-        return {
-          block: true,
-          reason: `${status.reason} Non-interactive fallback is deny (set HYPA_PI_ASK_NON_INTERACTIVE=allow to allow).`,
-        };
+          if (config.askNonInteractive === "allow") {
+            event.input.command = status.command;
+            return;
+          }
+
+          return {
+            block: true,
+            reason: `${status.reason} Non-interactive fallback is deny (set HYPA_PI_ASK_NON_INTERACTIVE=allow to allow).`,
+          };
+        }
       }
-    }
-  });
+    });
+  }
 
   pi.registerCommand("hypa", {
     description: "Show Hypa Pi extension diagnostics",
@@ -91,6 +93,7 @@ export default function (pi: ExtensionAPI) {
         `Config file: ${diagnostics.configFilePath ?? "none"}`,
         `Binary: ${diagnostics.binary}`,
         `Resolved binary: ${diagnostics.resolvedBinary}`,
+        `Bash rewrite interception: ${config.rewriteBash ? "enabled" : "disabled"}`,
         `Rewrite timeout: ${config.rewriteTimeoutMs}ms`,
         `Ask fallback (non-UI): ${config.askNonInteractive}`,
         `MCP proxy discovery: ${config.mcpProxyEnabled ? "enabled" : "disabled"}`,

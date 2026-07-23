@@ -50,6 +50,7 @@ test("isHypaCommand prevents direct hypa rewrite loops", () => {
 test("loadConfig applies deterministic defaults", () => {
   const config = loadConfig({ HYPA_PI_CONFIG: "none" });
   assert.equal(config.mode, "additive");
+  assert.equal(config.rewriteBash, true);
   assert.equal(config.binary, "hypa");
   assert.equal(config.rewriteTimeoutMs, 5000);
   assert.equal(config.askNonInteractive, "deny");
@@ -75,6 +76,7 @@ test("loadConfig uses config file defaults with environment overrides", () => {
     configPath,
     JSON.stringify({
       mode: "replace",
+      rewriteBash: true,
       binary: "/usr/local/bin/hypa-file",
       rewriteTimeoutMs: 7000,
       askNonInteractive: "allow",
@@ -88,6 +90,7 @@ test("loadConfig uses config file defaults with environment overrides", () => {
     {
       HYPA_PI_CONFIG: configPath,
       HYPA_PI_MODE: "additive",
+      HYPA_PI_REWRITE_BASH: "false",
       HYPA_BIN: "/usr/local/bin/hypa-env",
       HYPA_PI_REWRITE_TIMEOUT_MS: "9000",
       HYPA_PI_ENABLE_MCP_PROXY: "0",
@@ -97,6 +100,7 @@ test("loadConfig uses config file defaults with environment overrides", () => {
   );
 
   assert.equal(config.mode, "additive");
+  assert.equal(config.rewriteBash, false);
   assert.equal(config.binary, "/usr/local/bin/hypa-env");
   assert.equal(config.rewriteTimeoutMs, 9000);
   assert.equal(config.askNonInteractive, "allow");
@@ -111,6 +115,7 @@ test("loadConfigFile parses valid JSON", () => {
     configPath,
     JSON.stringify({
       mode: "replace",
+      rewriteBash: false,
       binary: " /opt/hypa ",
       rewriteTimeoutMs: 6000,
       askNonInteractive: "allow",
@@ -122,6 +127,7 @@ test("loadConfigFile parses valid JSON", () => {
 
   assert.deepEqual(loadConfigFile(configPath), {
     mode: "replace",
+    rewriteBash: false,
     binary: "/opt/hypa",
     rewriteTimeoutMs: 6000,
     askNonInteractive: "allow",

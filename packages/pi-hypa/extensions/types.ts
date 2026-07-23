@@ -25,6 +25,7 @@ export type RewriteStatus =
 
 export interface HypaPiConfig {
   mode: HypaPiMode;
+  rewriteBash: boolean;
   binary: string;
   rewriteTimeoutMs: number;
   askNonInteractive: AskNonInteractivePolicy;

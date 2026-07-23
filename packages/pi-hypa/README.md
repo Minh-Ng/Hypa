@@ -56,6 +56,7 @@ Hypa is invoked via the platform-native binary whenever it is installed as an op
 |---|---|---|
 | `HYPA_BIN` | bundled `@hypabolic/hypa`, then `hypa` | Hypa executable or absolute path. |
 | `HYPA_PI_MODE` | `additive` | `additive` keeps Pi builtins; `replace` disables Pi `bash/read/grep/find/ls` after registering `hypa_*` tools. |
+| `HYPA_PI_REWRITE_BASH` | `true` | Set to `false` to keep explicit `hypa_*` tools without spawning `hypa rewrite` before every Pi `bash` call. Useful when low command latency matters more than automatic compression. |
 | `HYPA_PI_REWRITE_TIMEOUT_MS` | `5000` | Rewrite CLI timeout in milliseconds. |
 | `HYPA_PI_ASK_NON_INTERACTIVE` | `deny` | `Ask` fallback when `ctx.hasUI === false`: `deny` or `allow`. |
 | `HYPA_PI_ENABLE_MCP_PROXY` | `0` | Enable `hypa_mcp_proxy`, a lazy discovery/invocation bridge for upstream MCP servers configured in Hypa. |

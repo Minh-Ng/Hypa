@@ -13,6 +13,7 @@ import type { HypaPiConfig } from "../extensions/types.js";
 
 const config: HypaPiConfig = {
   mode: "additive",
+  rewriteBash: true,
   binary: "hypa",
   rewriteTimeoutMs: 5000,
   askNonInteractive: "deny",
@@ -67,7 +68,7 @@ test("resolveBundledHypaBinary prefers native over bin.js when both exist", () =
     throw new Error(`unexpected resolve: ${id}`);
   };
 
-  const resolved = resolveBundledHypaBinary("hypa", exists, requireResolve, "linux");
+  const resolved = resolveBundledHypaBinary("hypa", exists, requireResolve, "linux", "x64");
   assert.equal(resolved, nativePath);
 });
 
@@ -118,7 +119,7 @@ test("resolveHypaBinary prefers native over PATH JS entry when PATH hits a .js l
     throw new Error(`unexpected resolve: ${id}`);
   };
 
-  const resolved = resolveHypaBinary("hypa.js", { PATH: pathJsDir }, "linux", exists, requireResolve);
+  const resolved = resolveHypaBinary("hypa.js", { PATH: pathJsDir }, "linux", exists, requireResolve, "x64");
   assert.equal(resolved, nativePath);
 });
 
@@ -167,7 +168,7 @@ test("resolveHypaBinary on Windows prefers bundled native binary over PATH .cmd 
     throw new Error(`unexpected resolve: ${id}`);
   };
 
-  const resolved = resolveHypaBinary("hypa", { PATH: binDir }, "win32", exists, requireResolve);
+  const resolved = resolveHypaBinary("hypa", { PATH: binDir }, "win32", exists, requireResolve, "x64");
 
   assert.equal(resolved.toLowerCase(), nativePath.toLowerCase());
   assert.notEqual(resolved.toLowerCase(), cmd.toLowerCase());

@@ -9,6 +9,7 @@ import type { HypaPiConfig } from "../extensions/types.js";
 function config(piMcpConfigPath?: string): HypaPiConfig {
   return {
     mode: "additive",
+    rewriteBash: true,
     binary: "hypa",
     rewriteTimeoutMs: 5000,
     askNonInteractive: "deny",

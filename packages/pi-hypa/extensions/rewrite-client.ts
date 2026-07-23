@@ -87,18 +87,19 @@ export function resolveHypaBinary(
   platformName: string = platform(),
   exists: (p: string) => boolean = existsSync,
   requireResolve: RequireResolve = require.resolve.bind(require),
+  archName: string = process.arch,
 ): string {
   if (binary.includes("/") || binary.includes("\\")) return binary;
 
   if (platformName === "win32") {
-    const nativeBinary = resolveNativeHypaBinary(exists, requireResolve, platformName);
+    const nativeBinary = resolveNativeHypaBinary(exists, requireResolve, platformName, archName);
     if (nativeBinary) return nativeBinary;
   }
 
   const pathBinary = resolvePathBinary(binary, env, platformName, exists);
   if (pathBinary && !isJsEntry(pathBinary)) return pathBinary;
 
-  const nativeBinary = resolveNativeHypaBinary(exists, requireResolve, platformName);
+  const nativeBinary = resolveNativeHypaBinary(exists, requireResolve, platformName, archName);
   if (nativeBinary) return nativeBinary;
 
   if (pathBinary) return pathBinary;
@@ -180,10 +181,11 @@ export function resolveBundledHypaBinary(
   exists: (p: string) => boolean = existsSync,
   requireResolve: RequireResolve = require.resolve.bind(require),
   platformName: string = platform(),
+  archName: string = process.arch,
 ): string | undefined {
   if (binary !== "hypa") return undefined;
 
-  const native = resolveNativeHypaBinary(exists, requireResolve, platformName);
+  const native = resolveNativeHypaBinary(exists, requireResolve, platformName, archName);
   if (native) return native;
 
   return resolveBundledJsHypaBinary(binary, exists, requireResolve);

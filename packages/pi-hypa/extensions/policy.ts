@@ -53,6 +53,7 @@ export function loadConfigFile(filePath: string): Partial<HypaPiConfig> {
   const config = parsed as Record<string, unknown>;
   const result: Partial<HypaPiConfig> = {};
   if (typeof config.mode === "string") result.mode = parseMode(config.mode);
+  if (typeof config.rewriteBash === "boolean") result.rewriteBash = config.rewriteBash;
   if (typeof config.binary === "string" && config.binary.trim()) result.binary = config.binary.trim();
   if (typeof config.rewriteTimeoutMs === "number") {
     const value = parsePositiveInteger(String(config.rewriteTimeoutMs), 0);
@@ -76,6 +77,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, configFilePath?
   const mcpProxyFlag = env.HYPA_PI_ENABLE_MCP_PROXY ?? env.HYPA_PI_ENABLE_MCP;
   return {
     mode: env.HYPA_PI_MODE !== undefined ? parseMode(env.HYPA_PI_MODE) : (fileConfig.mode ?? "additive"),
+    rewriteBash:
+      env.HYPA_PI_REWRITE_BASH !== undefined
+        ? parseBooleanFlag(env.HYPA_PI_REWRITE_BASH)
+        : (fileConfig.rewriteBash ?? true),
     binary: (env.HYPA_BIN?.trim() || undefined) ?? fileConfig.binary ?? "hypa",
     rewriteTimeoutMs:
       env.HYPA_PI_REWRITE_TIMEOUT_MS !== undefined
