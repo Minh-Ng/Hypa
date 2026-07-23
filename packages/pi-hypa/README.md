@@ -56,7 +56,7 @@ Hypa is invoked via the platform-native binary whenever it is installed as an op
 |---|---|---|
 | `HYPA_BIN` | bundled `@hypabolic/hypa`, then `hypa` | Hypa executable or absolute path. |
 | `HYPA_PI_MODE` | `additive` | `additive` keeps Pi builtins; `replace` disables Pi `bash/read/grep/find/ls` after registering `hypa_*` tools. |
-| `HYPA_PI_REWRITE_BASH` | `true` | Set to `false` to keep explicit `hypa_*` tools without spawning `hypa rewrite` before every Pi `bash` call. Useful when low command latency matters more than automatic compression. |
+| `HYPA_PI_REWRITE_BASH` | `true` | Set to `false` to keep explicit `hypa_*` tools without spawning `hypa rewrite` before every Pi `bash` call. This disables automatic compression **and** rewrite-policy outcomes (`Deny`/`Ask`), so direct Bash calls run without Hypa enforcement. |
 | `HYPA_PI_REWRITE_TIMEOUT_MS` | `5000` | Rewrite CLI timeout in milliseconds. |
 | `HYPA_PI_ASK_NON_INTERACTIVE` | `deny` | `Ask` fallback when `ctx.hasUI === false`: `deny` or `allow`. |
 | `HYPA_PI_ENABLE_MCP_PROXY` | `0` | Enable `hypa_mcp_proxy`, a lazy discovery/invocation bridge for upstream MCP servers configured in Hypa. |
@@ -117,8 +117,8 @@ Run `/hypa` in Pi to show extension mode, binary resolution, MCP proxy setting, 
 
 - Commands already starting with `hypa` are not rewritten.
 - Parse, timeout, or process errors fail open by passing the original command through and recording diagnostics.
-- `Deny` blocks the tool call.
-- `Ask` confirms in UI mode and uses a deterministic non-UI fallback.
+- With Bash rewrite/policy interception enabled, `Deny` blocks the tool call and `Ask` confirms in UI mode with a deterministic non-UI fallback.
+- Setting `HYPA_PI_REWRITE_BASH=false` bypasses those `Deny`/`Ask` decisions for Pi's built-in `bash`; it does not provide a policy-only mode.
 - `hypa_*` tool outputs are capped at 50KB / 2000 lines; truncated full output is saved to a temp file.
 
 ## Documentation

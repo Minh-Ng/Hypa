@@ -17,10 +17,13 @@ type HypaExtensionAPI = ExtensionAPI & {
   setActiveTools(names: string[]): void;
 };
 
-export default function (pi: ExtensionAPI) {
+export function registerHypaExtension(
+  pi: ExtensionAPI,
+  env: NodeJS.ProcessEnv = process.env,
+) {
   const hypaPi = pi as HypaExtensionAPI;
-  const configFilePath = resolveConfigFilePath(process.env);
-  const config = loadConfig(process.env, configFilePath);
+  const configFilePath = resolveConfigFilePath(env);
+  const config = loadConfig(env, configFilePath);
   const effectiveConfig = { ...config, binary: resolveHypaBinary(config.binary) };
   const diagnostics: HypaDiagnostics = {
     mode: config.mode,
@@ -93,7 +96,7 @@ export default function (pi: ExtensionAPI) {
         `Config file: ${diagnostics.configFilePath ?? "none"}`,
         `Binary: ${diagnostics.binary}`,
         `Resolved binary: ${diagnostics.resolvedBinary}`,
-        `Bash rewrite interception: ${config.rewriteBash ? "enabled" : "disabled"}`,
+        `Bash rewrite/policy interception: ${config.rewriteBash ? "enabled" : "disabled (Deny/Ask not enforced)"}`,
         `Rewrite timeout: ${config.rewriteTimeoutMs}ms`,
         `Ask fallback (non-UI): ${config.askNonInteractive}`,
         `MCP proxy discovery: ${config.mcpProxyEnabled ? "enabled" : "disabled"}`,
@@ -105,4 +108,8 @@ export default function (pi: ExtensionAPI) {
       ctx.ui.notify(lines.join("\n"), diagnostics.lastRewrite?.kind === "error" ? "warning" : "info");
     },
   });
+}
+
+export default function (pi: ExtensionAPI) {
+  registerHypaExtension(pi);
 }

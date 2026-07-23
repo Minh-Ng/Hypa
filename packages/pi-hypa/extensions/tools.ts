@@ -176,15 +176,30 @@ function normalizePathArg(path: string): string {
   return unprefixed;
 }
 
-export function buildReadCommand(path: string, offset?: number, limit?: number): string {
-  const quotedPath = shellQuote(normalizePathArg(path));
+export function buildReadCommand(
+  path: string,
+  offset?: number,
+  limit?: number,
+  platformName: NodeJS.Platform = platform(),
+): string {
+  let normalizedPath = normalizePathArg(path);
+  if (platformName === "win32" && normalizedPath.startsWith("-")) {
+    normalizedPath = `.\\${normalizedPath}`;
+  }
+  const quotedPath = shellQuote(normalizedPath, platformName);
   if (offset !== undefined || limit !== undefined) {
     const start = Math.max(1, Math.floor(offset ?? 1));
     const end = limit !== undefined ? start + Math.max(1, Math.floor(limit)) - 1 : "$";
+    const range = shellQuote(`${start},${end}p`, platformName);
+    if (platformName === "win32") {
+      // Keep the command free of shell metacharacters so Hypa can execute sed
+      // directly and preserve literal `%VAR%` path segments.
+      return `sed -n ${range} ${quotedPath}`;
+    }
     // Feed the file through stdin: BSD sed does not accept GNU's `--`
     // separator, while redirection also keeps dash-leading paths out of sed's
     // option parser.
-    return `sed -n ${shellQuote(`${start},${end}p`)} < ${quotedPath}`;
+    return `sed -n ${range} < ${quotedPath}`;
   }
   return `cat -- ${quotedPath}`;
 }

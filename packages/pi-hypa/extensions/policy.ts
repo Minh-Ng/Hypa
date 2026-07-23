@@ -24,6 +24,13 @@ export function parseBooleanFlag(value: string | undefined): boolean {
   return normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "on";
 }
 
+export function parseBooleanSetting(value: string | undefined, fallback: boolean): boolean {
+  const normalized = value?.trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(normalized ?? "")) return true;
+  if (["0", "false", "no", "off"].includes(normalized ?? "")) return false;
+  return fallback;
+}
+
 export function resolveConfigFilePath(env: NodeJS.ProcessEnv): string | undefined {
   const fromEnv = env.HYPA_PI_CONFIG?.trim();
   if (fromEnv !== undefined) {
@@ -79,7 +86,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, configFilePath?
     mode: env.HYPA_PI_MODE !== undefined ? parseMode(env.HYPA_PI_MODE) : (fileConfig.mode ?? "additive"),
     rewriteBash:
       env.HYPA_PI_REWRITE_BASH !== undefined
-        ? parseBooleanFlag(env.HYPA_PI_REWRITE_BASH)
+        ? parseBooleanSetting(env.HYPA_PI_REWRITE_BASH, true)
         : (fileConfig.rewriteBash ?? true),
     binary: (env.HYPA_BIN?.trim() || undefined) ?? fileConfig.binary ?? "hypa",
     rewriteTimeoutMs:

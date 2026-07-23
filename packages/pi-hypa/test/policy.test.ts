@@ -58,6 +58,23 @@ test("loadConfig applies deterministic defaults", () => {
   assert.equal(config.mcpProxyTimeoutMs, 10000);
 });
 
+test("loadConfig parses rewrite interception flags fail-safe", () => {
+  for (const value of ["0", "false", "no", "off", " FALSE "]) {
+    assert.equal(
+      loadConfig({ HYPA_PI_CONFIG: "none", HYPA_PI_REWRITE_BASH: value }).rewriteBash,
+      false,
+      value,
+    );
+  }
+  for (const value of ["", "treu", "disabled", "2"]) {
+    assert.equal(
+      loadConfig({ HYPA_PI_CONFIG: "none", HYPA_PI_REWRITE_BASH: value }).rewriteBash,
+      true,
+      value,
+    );
+  }
+});
+
 test("loadConfig enables MCP proxy discovery with preferred flag", () => {
   const config = loadConfig({
     HYPA_PI_CONFIG: "none",
