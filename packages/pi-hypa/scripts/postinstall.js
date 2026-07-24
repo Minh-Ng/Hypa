@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, realpathSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { homedir, platform } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -7,6 +7,7 @@ import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const SHIM_MARKER = "Managed by @hypabolic/pi-hypa";
 
 /** Platform package keys matching npm/hypa/bin.js PLATFORM_MAP. */
 const PLATFORM_MAP = {
@@ -92,12 +93,28 @@ function quoteSh(value) {
   return `'${value.replace(/'/g, `'"'"'`)}'`;
 }
 
+function isManagedShim(shim, kind) {
+  try {
+    const content = readFileSync(shim, "utf8");
+    if (content.includes(SHIM_MARKER)) return true;
+    if (kind === "unix") {
+      return content.includes('SELF="$(realpath "$0"')
+        && content.includes('real_candidate="$(realpath "$candidate"');
+    }
+    return content.includes('set "SELF=%~f0"')
+      && content.includes('if /I not "%%~fD\\hypa.cmd"=="!SELF!"');
+  } catch {
+    return false;
+  }
+}
+
 function installUnixShim(target) {
   const binDir = join(homedir(), ".local", "bin");
   const shim = join(binDir, "hypa");
   mkdirSync(binDir, { recursive: true });
 
-  if (existsSync(shim)) {
+  const replacing = existsSync(shim);
+  if (replacing && !isManagedShim(shim, "unix")) {
     console.error(`[pi-hypa] Hypa shim already exists at ${shim}; leaving it unchanged.`);
     return;
   }
@@ -108,6 +125,7 @@ function installUnixShim(target) {
       : `exec ${quoteSh(target.runtime)} ${quoteSh(target.path)} "$@"`;
 
   const script = `#!/usr/bin/env sh
+# ${SHIM_MARKER}
 set -eu
 SELF="$(realpath "$0" 2>/dev/null || printf '%s' "$0")"
 OLD_IFS="$IFS"
@@ -128,10 +146,11 @@ ${fallback}
 
   writeFileSync(shim, script, { mode: 0o755 });
 
+  const action = replacing ? "Updated" : "Installed";
   if (!process.env.PATH?.split(":").includes(binDir)) {
-    console.error(`[pi-hypa] Installed Hypa CLI shim at ${shim}. Add ${binDir} to PATH to run 'hypa' outside Pi.`);
+    console.error(`[pi-hypa] ${action} Hypa CLI shim at ${shim}. Add ${binDir} to PATH to run 'hypa' outside Pi.`);
   } else {
-    console.error(`[pi-hypa] Installed Hypa CLI shim at ${shim}.`);
+    console.error(`[pi-hypa] ${action} Hypa CLI shim at ${shim}.`);
   }
 }
 
@@ -140,7 +159,8 @@ function installWindowsShim(target) {
   const shim = join(binDir, "hypa.cmd");
   mkdirSync(binDir, { recursive: true });
 
-  if (existsSync(shim)) {
+  const replacing = existsSync(shim);
+  if (replacing && !isManagedShim(shim, "windows")) {
     console.error(`[pi-hypa] Hypa shim already exists at ${shim}; leaving it unchanged.`);
     return;
   }
@@ -151,6 +171,7 @@ function installWindowsShim(target) {
       : `"${target.runtime}" "${target.path}" %*`;
 
   const script = `@echo off
+rem ${SHIM_MARKER}
 setlocal enabledelayedexpansion
 set "SELF=%~f0"
 for %%D in ("%PATH:;=" "%") do (
@@ -171,13 +192,15 @@ ${fallback}
 `;
 
   writeFileSync(shim, script);
-  console.error(`[pi-hypa] Installed Hypa CLI shim at ${shim}. Add ${binDir} to PATH to run 'hypa' outside Pi.`);
+  const action = replacing ? "Updated" : "Installed";
+  console.error(`[pi-hypa] ${action} Hypa CLI shim at ${shim}. Add ${binDir} to PATH to run 'hypa' outside Pi.`);
 }
 
 try {
-  if (isLocalDevelopmentInstall()) process.exit(0);
+  const forceManagedShimRefresh = process.env.HYPA_PI_FORCE_CLI_INSTALL === "1";
+  if (!forceManagedShimRefresh && isLocalDevelopmentInstall()) process.exit(0);
   if (process.env.HYPA_PI_SKIP_CLI_INSTALL === "1") process.exit(0);
-  if (commandExists("hypa")) {
+  if (!forceManagedShimRefresh && commandExists("hypa")) {
     console.error("[pi-hypa] Hypa CLI already found on PATH; skipping user-level shim install.");
     process.exit(0);
   }
