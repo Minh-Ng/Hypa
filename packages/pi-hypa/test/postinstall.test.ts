@@ -39,6 +39,21 @@ exec node '/obsolete/npm/node_modules/@hypabolic/hypa/bin.js' "$@"
     assert.match(result.stderr, /Updated Hypa CLI shim/);
     assert.match(refreshed, /Managed by @hypabolic\/pi-hypa/);
     assert.doesNotMatch(refreshed, /obsolete\/npm/);
+
+    const competingBin = join(home, "other-bin");
+    mkdirSync(competingBin);
+    writeFileSync(
+      join(competingBin, "hypa"),
+      "#!/usr/bin/env sh\n# Managed by @hypabolic/pi-hypa\nexit 99\n",
+      { mode: 0o755 },
+    );
+    const invocation = spawnSync(shim, ["--version"], {
+      encoding: "utf8",
+      env: { ...process.env, PATH: `${competingBin}:${process.env.PATH}` },
+      timeout: 5_000,
+    });
+    assert.equal(invocation.status, 0, invocation.stderr || invocation.stdout);
+    assert.match(invocation.stdout, /0\.1\.3/);
   } finally {
     rmSync(home, { recursive: true, force: true });
   }

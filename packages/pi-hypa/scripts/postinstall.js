@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { homedir, platform } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -136,6 +136,9 @@ for dir in $PATH; do
   [ -x "$candidate" ] || continue
   real_candidate="$(realpath "$candidate" 2>/dev/null || printf '%s' "$candidate")"
   if [ "$real_candidate" != "$SELF" ]; then
+    if grep -q '${SHIM_MARKER}' "$candidate" 2>/dev/null; then
+      continue
+    fi
     IFS="$OLD_IFS"
     exec "$candidate" "$@"
   fi
@@ -145,6 +148,7 @@ ${fallback}
 `;
 
   writeFileSync(shim, script, { mode: 0o755 });
+  chmodSync(shim, 0o755);
 
   const action = replacing ? "Updated" : "Installed";
   if (!process.env.PATH?.split(":").includes(binDir)) {
@@ -183,8 +187,11 @@ for %%D in ("%PATH:;=" "%") do (
   )
   if exist "%%~D\\hypa.cmd" (
     if /I not "%%~fD\\hypa.cmd"=="!SELF!" (
-      call "%%~D\\hypa.cmd" %*
-      if not errorlevel 9009 exit /b !errorlevel!
+      findstr /C:"${SHIM_MARKER}" "%%~D\\hypa.cmd" >nul 2>&1
+      if errorlevel 1 (
+        call "%%~D\\hypa.cmd" %*
+        if not errorlevel 9009 exit /b !errorlevel!
+      )
     )
   )
 )
